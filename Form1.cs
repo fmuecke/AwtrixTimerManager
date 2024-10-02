@@ -10,6 +10,9 @@ namespace TimerApp
     {
         // HttpClient for sending HTTP POST requests
         private static readonly HttpClient client = new HttpClient();
+        
+        // TextBox to hold the IP address entered by the user
+        private TextBox ipAddressTextBox;        
 
         public Form1()
         {
@@ -39,13 +42,13 @@ namespace TimerApp
         }
 
         // Method to send a POST request to start the timer
-        private static async Task<string> StartTimer(int duration)
+        private static async Task<string> StartTimer(string host, int duration)
         {
             // Create the JSON body
             string body = "{ \"duration\": " + duration + ", \"start_now\" : true }";
             
             // Set the IP address
-            string url = "http://192.168.2.129/api/timer";
+            string url = "http://" + host + "/api/timer";
 
             // Send the POST request
             return await SendPostRequest(url, body);
@@ -75,10 +78,26 @@ namespace TimerApp
             // Get the duration from the associated text box
             Button button = sender as Button;
             TextBox textBox = (TextBox)button.Tag;
+            
 
-            var duration = FormatDuration(textBox.Text);
-            string response = await StartTimer(duration);
-            //MessageBox.Show(response, "Response", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            string ipAddress = ipAddressTextBox.Text;
+            if (IsValidIpAddress(ipAddress))
+            {
+                var duration = FormatDuration(textBox.Text);
+                string response = await StartTimer(ipAddress, duration);
+                //MessageBox.Show(response, "Response", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid IP address.", "Invalid IP", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }                
+        }
+
+        // Helper method to validate an IP address
+        private bool IsValidIpAddress(string ipAddress)
+        {
+            // A simple IP address validation method
+            return System.Net.IPAddress.TryParse(ipAddress, out _);
         }
 
         // Initialize the UI components
@@ -86,6 +105,22 @@ namespace TimerApp
         {
             // Initialize components
             this.SuspendLayout();
+
+            // Label for IP address
+            Label ipLabel = new Label
+            {
+                Location = new System.Drawing.Point(20, 20),
+                Size = new System.Drawing.Size(100, 25),
+                Text = "Host:"
+            };
+
+            // TextBox for entering IP address
+            ipAddressTextBox = new TextBox
+            {
+                Location = new System.Drawing.Point(120, 20),
+                Size = new System.Drawing.Size(150, 25),
+                Name = "ipAddressTextBox"
+            };
 
             // Array of TextBoxes for duration input
             TextBox[] textBoxes = new TextBox[4];
@@ -96,7 +131,7 @@ namespace TimerApp
                 // Create and configure TextBox
                 textBoxes[i] = new TextBox
                 {
-                    Location = new System.Drawing.Point(20, 20 + (i * 40)),
+                    Location = new System.Drawing.Point(20, 60 + (i * 40)),
                     Size = new System.Drawing.Size(150, 25),
                     Name = $"textBox{i + 1}"
                 };
@@ -104,7 +139,7 @@ namespace TimerApp
                 // Create and configure Button
                 sendButtons[i] = new Button
                 {
-                    Location = new System.Drawing.Point(180, 20 + (i * 40)),
+                    Location = new System.Drawing.Point(180, 60 + (i * 40)),
                     Size = new System.Drawing.Size(75, 25),
                     Text = "Send",
                     Name = $"button{i + 1}",
@@ -117,13 +152,17 @@ namespace TimerApp
                 this.Controls.Add(sendButtons[i]);
             }
 
+            // Add the IP label and textbox to the form
+            this.Controls.Add(ipLabel);
+            this.Controls.Add(ipAddressTextBox);
+
             // Configure the form
-            this.ClientSize = new System.Drawing.Size(300, 200);
+            this.ClientSize = new System.Drawing.Size(300, 240);
             this.Name = "Form1";
             this.Text = "Timer App";
 
             // Complete the layout of the form
             this.ResumeLayout(false);
-        }
+        }       
     }
 }
